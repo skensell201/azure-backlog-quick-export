@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="images/icon.png" width="112" alt="Backlog Quick Export icon">
+</p>
+
 # Backlog Quick Export
 
 An Azure DevOps Server 2022 (on-prem) extension that adds an **Export** tab to the product
