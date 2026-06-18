@@ -1,0 +1,29 @@
+{
+  "manifestVersion": 1,
+  "id": "workitems-quickexport",
+  "publisher": "local",
+  "version": "1.2.0",
+  "name": "Backlog Quick Export",
+  "description": "Adds an Export tab to the product backlog for downloading the whole level (with hierarchy and Task rollups) to CSV or Excel.",
+  "categories": ["Boards"],
+  "targets": [{ "id": "Microsoft.TeamFoundation.Server", "version": "[17.0,)" }],
+  "icons": { "default": "images/icon.png" },
+  "scopes": ["vso.work", "vso.project", "vso.identity"],
+  "contributions": [
+    {
+      "id": "backlog-export-tab",
+      "type": "ms.vss-web.tab",
+      "description": "Export tab on the product backlog: download the whole current backlog level to CSV/Excel.",
+      "targets": ["ms.vss-work-web.product-backlog-tabs"],
+      "properties": {
+        "name": "Export",
+        "uri": "dist/tab.html",
+        "registeredObjectId": "backlogExportTab"
+      }
+    }
+  ],
+  "files": [
+    { "path": "dist", "addressable": true },
+    { "path": "images", "addressable": true }
+  ]
+}

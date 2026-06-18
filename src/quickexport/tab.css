@@ -1,0 +1,59 @@
+.qe-tab {
+  font-family: "Segoe UI", -apple-system, system-ui, sans-serif;
+  padding: 16px 20px;
+  color: #1f1f1f;
+}
+.qe-tab h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 600;
+}
+.qe-sub {
+  margin: 0 0 16px;
+  color: #605e5c;
+}
+.qe-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 320px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #605e5c;
+}
+.qe-field select {
+  padding: 6px 8px;
+  font-size: 14px;
+  border: 1px solid #8a8886;
+  border-radius: 2px;
+  background: #fff;
+}
+.qe-buttons {
+  display: flex;
+  gap: 12px;
+}
+.qe-btn {
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: #0078d4;
+  border: 1px solid #0078d4;
+  border-radius: 2px;
+  cursor: pointer;
+}
+.qe-btn:hover:not(:disabled) {
+  background: #106ebe;
+}
+.qe-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.qe-status {
+  margin-top: 14px;
+  color: #605e5c;
+}
+.qe-error {
+  margin-top: 14px;
+  color: #a4262c;
+}
