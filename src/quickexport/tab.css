@@ -49,6 +49,19 @@
   opacity: 0.5;
   cursor: default;
 }
+.qe-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 18px;
+  max-width: 480px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #605e5c;
+}
+.qe-hint-icon {
+  flex: none;
+}
 .qe-status {
   margin-top: 14px;
   color: #605e5c;

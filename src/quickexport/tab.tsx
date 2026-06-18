@@ -9,6 +9,7 @@ import { BacklogService } from '../services/BacklogService';
 import { WorkItemService } from '../services/WorkItemService';
 import { buildBacklogTreeExport, TreeExportDeps } from './treeExport';
 import { pickDefaultLevel } from './levelSelect';
+import { detectLang, strings, Strings } from './i18n';
 
 function triggerDownload(filename: string, data: string | Blob, mime: string): void {
   const blob = typeof data === 'string' ? new Blob([data], { type: mime }) : data;
@@ -29,9 +30,10 @@ interface AppProps {
   collectionUrl: string;
   levels: NamedRef[];
   defaultLevel: string;
+  t: Strings;
 }
 
-function App({ deps, project, team, collectionUrl, levels, defaultLevel }: AppProps): JSX.Element {
+function App({ deps, project, team, collectionUrl, levels, defaultLevel, t }: AppProps): JSX.Element {
   const [level, setLevel] = useState(defaultLevel);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -51,12 +53,12 @@ function App({ deps, project, team, collectionUrl, levels, defaultLevel }: AppPr
 
   return (
     <div className="qe-tab">
-      <h2>Export backlog</h2>
+      <h2>{t.heading}</h2>
       <p className="qe-sub">
-        Team: <strong>{team}</strong>
+        {t.team}: <strong>{team}</strong>
       </p>
       <label className="qe-field">
-        Backlog level
+        {t.level}
         <select value={level} onChange={(e) => setLevel(e.target.value)} disabled={busy}>
           {levels.map((l) => (
             <option key={l.id} value={l.name}>
@@ -67,14 +69,18 @@ function App({ deps, project, team, collectionUrl, levels, defaultLevel }: AppPr
       </label>
       <div className="qe-buttons">
         <button className="qe-btn" disabled={busy} onClick={() => download('csv')}>
-          Download CSV
+          {t.downloadCsv}
         </button>
         <button className="qe-btn" disabled={busy} onClick={() => download('excel')}>
-          Download Excel
+          {t.downloadExcel}
         </button>
       </div>
-      {busy && <p className="qe-status">Exporting…</p>}
-      {error && <p className="qe-error">Export failed: {error}</p>}
+      <p className="qe-hint">
+        <span className="qe-hint-icon" aria-hidden="true">💡</span>
+        {t.idHint}
+      </p>
+      {busy && <p className="qe-status">{t.exporting}</p>}
+      {error && <p className="qe-error">{t.failedPrefix}{error}</p>}
     </div>
   );
 }
@@ -89,6 +95,16 @@ function preferredLevelName(ctx: unknown): string | undefined {
 }
 
 const tabState: { context: unknown } = { context: null };
+let t: Strings = strings('en');
+
+/** Reads the Azure DevOps UI culture (e.g. "ru-RU") to pick the language; falls back to English. */
+function detectCulture(): void {
+  try {
+    t = strings(detectLang(SDK.getPageContext()?.globalization?.culture));
+  } catch {
+    /* keep English fallback */
+  }
+}
 
 function fail(message: string): void {
   const root = document.getElementById('root');
@@ -109,12 +125,13 @@ async function start(): Promise<void> {
     isDisabled: () => false,
   });
   await SDK.ready();
+  detectCulture();
 
   const web = SDK.getWebContext();
   const project = web.project?.name;
   const team = web.team?.name;
   if (!project || !team) {
-    fail('Open this tab from a team Backlogs page.');
+    fail(t.openFromBacklog);
     SDK.notifyLoadSucceeded();
     return;
   }
@@ -135,7 +152,7 @@ async function start(): Promise<void> {
     return;
   }
   if (levels.length === 0) {
-    fail(`No backlog levels found for team "${team}".`);
+    fail(t.noLevels(team));
     SDK.notifyLoadSucceeded();
     return;
   }
@@ -152,6 +169,7 @@ async function start(): Promise<void> {
       collectionUrl={baseUrl}
       levels={levels}
       defaultLevel={def?.name ?? ''}
+      t={t}
     />,
     document.getElementById('root')
   );
