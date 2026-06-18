@@ -7,6 +7,7 @@ import { Column } from '../models/types';
  */
 export function treeExportColumns(): Column[] {
   return [
+    { kind: 'field', referenceName: 'System.Id', header: 'ID' },
     { kind: 'field', referenceName: 'System.WorkItemType', header: 'Work Item Type' },
     { kind: 'field', referenceName: 'System.Title', header: 'Title' },
     { kind: 'field', referenceName: 'System.State', header: 'State' },
@@ -25,6 +26,5 @@ export function treeExportColumns(): Column[] {
       ofType: 'Task',
       header: 'Sum of Task Completed Work',
     },
-    { kind: 'field', referenceName: 'System.Id', header: 'ID' },
   ];
 }

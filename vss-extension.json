@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "id": "workitems-quickexport",
   "publisher": "local",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "name": "Backlog Quick Export",
   "description": "Adds an Export tab to the product backlog for downloading the whole level (with hierarchy and Task rollups) to CSV or Excel.",
   "categories": ["Boards"],

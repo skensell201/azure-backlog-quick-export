@@ -1,6 +1,6 @@
 {
   "name": "azure-backlog-quick-export",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "private": true,
   "description": "Azure DevOps Server 2022 extension: an Export tab on the product backlog that downloads the whole backlog level (with hierarchy and Task rollups) to CSV or Excel.",
   "scripts": {

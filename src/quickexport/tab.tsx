@@ -26,11 +26,12 @@ interface AppProps {
   deps: TreeExportDeps;
   project: string;
   team: string;
+  collectionUrl: string;
   levels: NamedRef[];
   defaultLevel: string;
 }
 
-function App({ deps, project, team, levels, defaultLevel }: AppProps): JSX.Element {
+function App({ deps, project, team, collectionUrl, levels, defaultLevel }: AppProps): JSX.Element {
   const [level, setLevel] = useState(defaultLevel);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -39,7 +40,7 @@ function App({ deps, project, team, levels, defaultLevel }: AppProps): JSX.Eleme
     setBusy(true);
     setError('');
     try {
-      const payload = await buildBacklogTreeExport(deps, { project, team, level, format });
+      const payload = await buildBacklogTreeExport(deps, { project, team, level, format, collectionUrl });
       triggerDownload(payload.filename, payload.data, payload.mime);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -144,7 +145,14 @@ async function start(): Promise<void> {
   const def = pickDefaultLevel(levels, preferredLevelName(tabState.context));
 
   ReactDOM.render(
-    <App deps={{ backlog, workItems }} project={project} team={team} levels={levels} defaultLevel={def?.name ?? ''} />,
+    <App
+      deps={{ backlog, workItems }}
+      project={project}
+      team={team}
+      collectionUrl={baseUrl}
+      levels={levels}
+      defaultLevel={def?.name ?? ''}
+    />,
     document.getElementById('root')
   );
   SDK.notifyLoadSucceeded();

@@ -1,4 +1,10 @@
-import { flattenTreeForExport, buildBacklogTreeExport, TreeExportDeps, INDENT } from '../treeExport';
+import {
+  flattenTreeForExport,
+  buildBacklogTreeExport,
+  workItemUrl,
+  TreeExportDeps,
+  INDENT,
+} from '../treeExport';
 import { Column, NamedRef, TreeNode, TreeTable, TreeRelations } from '../../models/types';
 
 const COLUMNS: Column[] = [
@@ -22,14 +28,23 @@ function tree(): TreeTable {
 }
 
 describe('flattenTreeForExport', () => {
-  it('prepends an Order column and indents Title by depth, depth-first', () => {
-    const table = flattenTreeForExport(tree(), [1, 3]);
-    expect(table.headers).toEqual(['Order', 'Work Item Type', 'Title', 'ID']);
-    expect(table.rows).toEqual([
+  it('prepends Order, indents Title by depth, and reports row work-item ids', () => {
+    const out = flattenTreeForExport(tree(), [1, 3]);
+    expect(out.headers).toEqual(['Order', 'Work Item Type', 'Title', 'ID']);
+    expect(out.rowIds).toEqual([1, 2, 3]);
+    expect(out.rows).toEqual([
       [1, 'User Story', 'Story A', 1],
       ['', 'Task', `${INDENT}Task 1`, 2],
       [2, 'User Story', 'Story B', 3],
     ]);
+  });
+});
+
+describe('workItemUrl', () => {
+  it('builds a work-item edit URL under the collection + project', () => {
+    expect(workItemUrl('http://srv/col/', 'GIS BIOM', 741139)).toBe(
+      'http://srv/col/GIS%20BIOM/_workitems/edit/741139'
+    );
   });
 });
 
@@ -43,9 +58,7 @@ describe('buildBacklogTreeExport', () => {
     };
     return {
       backlog: {
-        getBacklogLevels: async (): Promise<NamedRef[]> => [
-          { id: 'Microsoft.RequirementCategory', name: 'Stories' },
-        ],
+        getBacklogLevels: async (): Promise<NamedRef[]> => [{ id: 'Microsoft.RequirementCategory', name: 'Stories' }],
         getBacklogWorkItemIds: async (): Promise<number[]> => [100, 200],
       },
       workItems: {
@@ -72,37 +85,33 @@ describe('buildBacklogTreeExport', () => {
     };
   }
 
-  it('rolls Task estimates up to the parent and nests children under the level item', async () => {
-    const out = await buildBacklogTreeExport(deps(), {
-      project: 'P',
-      team: 'T',
-      level: 'stories',
-      format: 'csv',
-    });
+  const base = { project: 'P', team: 'T', collectionUrl: 'http://srv/col' } as const;
+
+  it('puts ID second (after Order), rolls up sums, nests children, and appends a URL column for CSV', async () => {
+    const out = await buildBacklogTreeExport(deps(), { ...base, level: 'stories', format: 'csv' });
     expect(out.filename).toBe('T - Stories.csv');
-    const csv = out.data as string;
-    const lines = csv.trim().split('\n');
-    expect(lines[0]).toContain('Order,Work Item Type,Title');
-    expect(lines[0]).toContain('Sum of Task Original Estimate,Sum of Task Completed Work,ID');
-    // Story A is order 1 with rolled-up sums 5 and 3 from its child Task.
-    expect(lines[1]).toContain('1,User Story,Story A');
-    expect(lines[1]).toContain(',5,3,100');
-    // The Task nests under Story A (indented title, no Order).
+    const lines = (out.data as string).trim().split('\n');
+    expect(lines[0]).toContain('Order,ID,Work Item Type,Title');
+    expect(lines[0]).toContain('Sum of Task Completed Work,URL');
+    // Story A: order 1, ID 100 (second column), rolled-up sums 5/3, and its edit URL.
+    expect(lines[1]).toMatch(/^1,100,User Story,Story A,/);
+    expect(lines[1]).toContain(',5,3,http://srv/col/P/_workitems/edit/100');
+    // The Task nests under Story A (indented title, blank Order, ID 101).
+    expect(lines[2]).toMatch(/^,101,Task,/);
     expect(lines[2]).toContain('Task 1');
-    expect(lines[2]).toMatch(/^,Task,/);
-    // Story B is order 2 with zero rollups.
-    expect(lines[3]).toContain('2,User Story,Story B');
+    // Story B: order 2.
+    expect(lines[3]).toMatch(/^2,200,User Story,Story B,/);
   });
 
   it('produces an xlsx Blob for the excel format', async () => {
-    const out = await buildBacklogTreeExport(deps(), { project: 'P', team: 'T', level: 'Stories', format: 'excel' });
+    const out = await buildBacklogTreeExport(deps(), { ...base, level: 'Stories', format: 'excel' });
     expect(out.filename).toBe('T - Stories.xlsx');
     expect(out.data).toBeInstanceOf(Blob);
   });
 
   it('throws a clear error for an unknown level', async () => {
     await expect(
-      buildBacklogTreeExport(deps(), { project: 'P', team: 'T', level: 'Nope', format: 'csv' })
+      buildBacklogTreeExport(deps(), { ...base, level: 'Nope', format: 'csv' })
     ).rejects.toThrow(/Backlog level "Nope" not found.*Available: Stories/);
   });
 });

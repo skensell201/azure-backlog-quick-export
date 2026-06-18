@@ -1,4 +1,4 @@
-import { toCsv, toXlsxBlob } from '../ExportService';
+import { toCsv, toXlsxBlob, buildWorksheet } from '../ExportService';
 import { Table } from '../../models/types';
 import * as XLSX from 'xlsx';
 
@@ -32,5 +32,11 @@ describe('toXlsxBlob', () => {
     const ws = XLSX.utils.aoa_to_sheet([table.headers, ...table.rows.map((r) => r.map((c) => (c === null ? '' : c)))]);
     const round = XLSX.utils.sheet_to_json<{ ID: number }>(ws);
     expect(round[0].ID).toBe(1);
+  });
+
+  it('attaches hyperlinks to the configured column', () => {
+    const ws = buildWorksheet(table, { colIndex: 0, urls: ['http://x/edit/1', 'http://x/edit/2'] });
+    expect(ws['A2'].l.Target).toBe('http://x/edit/1');
+    expect(ws['A3'].l.Target).toBe('http://x/edit/2');
   });
 });

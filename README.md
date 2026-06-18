@@ -15,11 +15,13 @@ without selecting individual items.
 - Exports the entire current backlog level — no per-item selection.
 - **Hierarchy preserved**: descendants are nested under their backlog item (depth-first),
   with the Title indented per level so the tree is visible in the file.
-- **Native-grid columns** (minus Story Points): Order, Work Item Type, Title, State,
+- **Native-grid columns** (minus Story Points): Order, ID, Work Item Type, Title, State,
   Value Area, Iteration Path, Tags, Sum of Task Original Estimate, Sum of Task Completed
-  Work, ID.
+  Work.
 - **Task rollups**: `Sum of Task Original Estimate` and `Sum of Task Completed Work` are
   summed from each item's descendant Tasks.
+- **Work-item links**: in Excel the **ID** cell is a clickable hyperlink to the work item;
+  in CSV a trailing **URL** column holds the full link.
 - CSV is UTF-8 with BOM and hardened against spreadsheet formula injection; Excel is a
   real `.xlsx`.
 - Pure client-side: TypeScript + React, SDK-injected token, REST `api-version=6.0`.

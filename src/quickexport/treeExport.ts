@@ -24,6 +24,19 @@ export interface TreeExportRequest {
   team: string;
   level: string;
   format: 'csv' | 'excel';
+  /** Collection base URL, used to build work-item links (e.g. http://server/collection). */
+  collectionUrl: string;
+}
+
+export interface FlattenedExport {
+  headers: string[];
+  rows: CellValue[][];
+  rowIds: number[]; // work item id per row, aligned to rows
+}
+
+/** Builds the Azure DevOps work-item edit URL for an id. */
+export function workItemUrl(collectionUrl: string, project: string, id: number): string {
+  return `${collectionUrl.replace(/\/$/, '')}/${encodeURIComponent(project)}/_workitems/edit/${id}`;
 }
 
 export interface ExportPayload {
@@ -40,10 +53,11 @@ const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.s
  * (1-based backlog position for level items, blank for nested children) and
  * indents the Title cell by depth so the hierarchy is visible.
  */
-export function flattenTreeForExport(tree: TreeTable, levelIds: number[]): Table {
+export function flattenTreeForExport(tree: TreeTable, levelIds: number[]): FlattenedExport {
   const order = new Map<number, number>();
   levelIds.forEach((id, i) => order.set(id, i + 1));
   const rows: CellValue[][] = [];
+  const rowIds: number[] = [];
 
   const visit = (id: number, depth: number): void => {
     const n = tree.nodes.get(id);
@@ -53,12 +67,12 @@ export function flattenTreeForExport(tree: TreeTable, levelIds: number[]): Table
       cells[tree.titleIndex] = INDENT.repeat(depth) + cells[tree.titleIndex];
     }
     rows.push([order.get(id) ?? '', ...cells]);
+    rowIds.push(id);
     for (const child of n.childIds) visit(child, depth + 1);
   };
   for (const root of tree.roots) visit(root, 0);
 
-  // columns carries the work-item columns; the "Order" header is export-only (toCsv/xlsx use headers + rows).
-  return { columns: tree.columns, headers: ['Order', ...tree.headers], rows };
+  return { headers: ['Order', ...tree.headers], rows, rowIds };
 }
 
 /**
@@ -83,11 +97,21 @@ export async function buildBacklogTreeExport(deps: TreeExportDeps, req: TreeExpo
   const { parentOf, childrenOf } = parentChild(orderedIds, fields);
   const rollups = computeRollups({ ids: orderedIds, parentOf, childrenOf, fields, sums: sumSpecsOf(columns) });
   const tree = buildTree({ orderedIds, levelIds, parentOf, columns, fields, rollups });
-  const table = flattenTreeForExport(tree, levelIds);
+  const flat = flattenTreeForExport(tree, levelIds);
+  const urls = flat.rowIds.map((id) => workItemUrl(req.collectionUrl, req.project, id));
 
   const base = `${req.team} - ${match.name}`;
   if (req.format === 'csv') {
+    // CSV cells can't be hyperlinks, so the full link goes in a trailing URL column.
+    const table: Table = {
+      columns: [],
+      headers: [...flat.headers, 'URL'],
+      rows: flat.rows.map((row, i) => [...row, urls[i]]),
+    };
     return { filename: `${base}.csv`, mime: CSV_MIME, data: toCsv(table) };
   }
-  return { filename: `${base}.xlsx`, mime: XLSX_MIME, data: toXlsxBlob(table) };
+  // Excel: the ID cell carries a real hyperlink to the work item.
+  const table: Table = { columns: [], headers: flat.headers, rows: flat.rows };
+  const idColIndex = flat.headers.indexOf('ID');
+  return { filename: `${base}.xlsx`, mime: XLSX_MIME, data: toXlsxBlob(table, { colIndex: idColIndex, urls }) };
 }

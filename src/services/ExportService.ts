@@ -22,9 +22,28 @@ export function toCsv(table: Table): string {
   return BOM + [header, ...body].join('\n') + '\n';
 }
 
-export function toXlsxBlob(table: Table): Blob {
+/** Per-column hyperlinks: `urls[i]` is the link for data row `i` (aligned to table.rows); null = no link. */
+export interface CellLinks {
+  colIndex: number;
+  urls: (string | null)[];
+}
+
+/** Builds the worksheet model, optionally attaching hyperlinks to one column. */
+export function buildWorksheet(table: Table, links?: CellLinks): XLSX.WorkSheet {
   const aoa: CellValue[][] = [table.headers, ...table.rows.map((row) => row.map((c) => (c === null ? '' : c)))];
   const ws = XLSX.utils.aoa_to_sheet(aoa);
+  if (links) {
+    links.urls.forEach((url, i) => {
+      if (!url) return;
+      const cell = ws[XLSX.utils.encode_cell({ r: i + 1, c: links.colIndex })];
+      if (cell) cell.l = { Target: url };
+    });
+  }
+  return ws;
+}
+
+export function toXlsxBlob(table: Table, links?: CellLinks): Blob {
+  const ws = buildWorksheet(table, links);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Work Items');
   const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
