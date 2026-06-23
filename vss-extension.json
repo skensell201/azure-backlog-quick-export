@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "id": "workitems-quickexport",
   "publisher": "iksoftware",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "name": "Backlog Quick Export",
   "description": "Adds an Export tab to the product backlog for downloading the whole level (with hierarchy and Task rollups) to CSV or Excel.",
   "content": { "details": { "path": "overview.md" } },
